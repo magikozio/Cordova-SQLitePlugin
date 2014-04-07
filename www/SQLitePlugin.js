@@ -210,15 +210,49 @@
       throw new Error("a statement error callback did not return false");
     }
   };
+  
+  // Start Crmvillage.biz Fix
+  SQLitePluginTransaction.prototype.insertCommit = function(tx) {
+	// add commit
+	succeeded = function(tx) {
+	  tx.db.startNextTransaction();
+	  if (tx.success) {
+	    tx.success();
+	  }
+	};
+	failed = function(tx, err) {
+	  tx.db.startNextTransaction();
+	  if (tx.error) {
+	    tx.error(new Error("error while trying to commit: " + err.message));
+	  }
+	};
+	if (tx.txlock) {
+	  this.executeSql("COMMIT", [], succeeded, failed);
+	}
+  };
+
+  SQLitePluginTransaction.prototype.end = function(tx) {
+	tx.finalized = true;
+	if (!tx.txlock) {
+		tx.db.startNextTransaction();
+		if (tx.success) {
+			tx.success();
+		}
+	}
+  };
+  // End Crmvillage.biz Fix
 
   SQLitePluginTransaction.prototype.run = function() {
     var batchExecutes, handlerFor, i, mycb, mycbmap, mycommand, qid, request, tropts, tx, txFailure, waiting;
     txFailure = null;
     tropts = [];
+    tx = this;
+    
+    this.insertCommit(tx); // Crmvillage.biz Fix
     batchExecutes = this.executes;
     waiting = batchExecutes.length;
     this.executes = [];
-    tx = this;
+    
     handlerFor = function(index, didSucceed) {
       return function(response) {
         var err;
@@ -245,7 +279,7 @@
 
             tx.run();
           } else {
-            tx.finish();
+            tx.end(); // fix
           }
         }
       };
