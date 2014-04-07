@@ -279,7 +279,7 @@
 
             tx.run();
           } else {
-            tx.end(); // fix
+            tx.end(tx); // fix
           }
         }
       };
