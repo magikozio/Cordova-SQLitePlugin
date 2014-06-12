@@ -213,6 +213,7 @@
   
   // Start Crmvillage.biz Fix
   SQLitePluginTransaction.prototype.insertCommit = function(tx) {
+	var failed, succeeded;
 	// add commit
 	succeeded = function(tx) {
 	  tx.db.startNextTransaction();
